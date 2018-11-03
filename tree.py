@@ -3,7 +3,7 @@ class OriginalTree:
         self.tid = id
         self.pre_order_string = []
         self.pre_order_string.extend(nodes)
-        self.partner = []
+        self.partner = list(range(len(self.pre_order_string)))
         self.buildtree()
 
     def buildtree(self):
@@ -11,8 +11,8 @@ class OriginalTree:
         for index in range(len(self.pre_order_string)):
             if self.pre_order_string[index] == '-1':
                 first = stack.pop()
-                self.partner.insert(first, index)
-                self.partner.insert(index, first)
+                self.partner[first] = index
+                self.partner[index] = first
             else:
                 stack.append(index)
 
@@ -28,18 +28,19 @@ class OriginalTree:
 class SubtreePattern:
     def __init__(self, subtree, ge):
         self.pre_order_string = []
-        self.lastposition = 0
-        self.position = []
+        self.lastindex = 0
         self.partner = []
         if subtree == None: # ge is a list of nodes
             self.pre_order_string.extend(ge)
+            self.partner = list(range(len(self.pre_order_string)))
         else:   # ge is growth element
             newnodes = [ge.label, '-1']
-            attachedind = subtree.nodein(ge.attached)
+            attachedind = ge.attached
             insertpos = subtree.partnerof(attachedind)
             self.pre_order_string = subtree.nodes()[0:insertpos]
             newnodes.extend(subtree.nodes()[insertpos:])
             self.pre_order_string.extend(newnodes)
+            self.partner = list(range(len(self.pre_order_string)))
         self.buildtree()
 
     def buildtree(self):
@@ -47,18 +48,14 @@ class SubtreePattern:
         for index in range(len(self.pre_order_string)):
             if self.pre_order_string[index] == '-1':
                 first = stack.pop()
-                self.partner.insert(first, index)
-                self.partner.insert(index, first)
+                self.partner[first] = index
+                self.partner[index] = first
             else:
                 stack.append(index)
-                self.position.append(index)
-        self.lastposition = len(self.position)
+                self.lastindex = index
 
     def nodes(self):
         return self.pre_order_string
-
-    def nodein(self, pos):
-        return self.position[pos - 1]
 
     def partnerof(self, index):
         return self.partner[index]

@@ -14,12 +14,12 @@ class GrowthElement:
 
 
 class ProjectedInstance:
-    def __init__(self, tid, st, ed, attachposition):
+    def __init__(self, tid, st, ed, attached):
         self.tid = tid
         self.st = st
         self.ed = ed
-        self.attachpos = attachposition
+        self.attachindex = attached
 
     def __str__(self):
-        return "ProIns: (%d, %d, %d, %d)" % (self.tid, self.st, self.ed, self.attachpos)
+        return "ProIns: (%d, %d, %d, %d)" % (self.tid, self.st, self.ed, self.attachindex)
 

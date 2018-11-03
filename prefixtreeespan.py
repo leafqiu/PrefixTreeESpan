@@ -53,7 +53,7 @@ def prodbfromdb(trees, label):
             if node == label:
                 partner = tree.partnerindex(index)
                 if (index + 1) < partner: # leaf label has no proinstance
-                    proinstance = ProjectedInstance(tree.tid, index + 1, partner, 1)
+                    proinstance = ProjectedInstance(tree.tid, index + 1, partner, 0)
                     prodb.append(proinstance)
     return prodb
 
@@ -65,7 +65,7 @@ def frequentpattern(trees, subtree, prodb):
         tree = trees[proins.tid]
         for node in tree.nodes()[proins.st: proins.ed]:
             if node != '-1':
-                ge = GrowthElement(node, proins.attachpos)
+                ge = GrowthElement(node, proins.attachindex)
                 if growthele.__contains__(ge):
                     growthele[ge] += 1
                 else:
@@ -75,7 +75,7 @@ def frequentpattern(trees, subtree, prodb):
         global min_sup
         if sup >= min_sup:
             freges.append(ge)
-    # for each growth-element, extend subtree to (subtree + 1)
+    # for each growth-element
     for ge in freges:
         # extend subtree with ge and write it
         pattern = SubtreePattern(subtree, ge)
@@ -84,33 +84,45 @@ def frequentpattern(trees, subtree, prodb):
                 f.write(node + ' ')
             f.write('\n')
         # find all occurrences of ge and construct (subtree + 1)'s projected database
-        label = ge.label
+        # one occurrence corresponding to one projected instance
         newprodb = []
         for proins in prodb:
             tree = trees[proins.tid]
             treenodes = tree.nodes()
             for index, node in enumerate(treenodes[proins.st: proins.ed], proins.st):
                 # find occurrence
-                if node == label:
+                if node == ge.label and ge.attached == proins.attachindex:
                     partnerindex = tree.partnerindex(index)
-                    # new position vs. occurrence's attached position
                     prestind = index
                     poststind = partnerindex
-                    for subindex, subnode in enumerate(treenodes[(index + 1): partnerindex]):
+                    for subindex, subnode in enumerate(treenodes[(index + 1): partnerindex], (index + 1)):
                         if subnode != '-1':
                             prestind = subindex
                             break
-                    for subindex, subnode in enumerate(treenodes[(partnerindex + 1): proins.ed]):
+                    for subindex, subnode in enumerate(treenodes[(partnerindex + 1): proins.ed], (partnerindex + 1)):
                         if subnode != '-1':
                             poststind = subindex
                             break
+                    # if pattern.nodes()[0] == 'A' and pattern.nodes()[1] == 'B':
+                    #     print(proins.tid, index, partnerindex, prestind, poststind)
+
                     # construct projected instance
                     if index < prestind < partnerindex:
-                        newproins = ProjectedInstance(proins.tid, prestind, partnerindex, pattern.lastposition)
+                        # hanging on the last node
+                        newproins = ProjectedInstance(proins.tid, prestind, partnerindex, pattern.lastindex)
                         newprodb.append(newproins)
+                        # hanging on the ancestors of last node
+                        patnodes = pattern.nodes()
+                        stindex = pattern.partnerof(pattern.lastindex) + 1
+                        edindex = len(patnodes)
+                        for patindex in range(stindex, edindex):
+                            if patnodes[patindex] == '-1' and pattern.partnerof(patindex) < pattern.lastindex:
+                                newproins = ProjectedInstance(proins.tid, prestind, partnerindex, pattern.partnerof(patindex))
+                                newprodb.append(newproins)
                     if poststind > partnerindex:
-                        newproins = ProjectedInstance(proins.tid, poststind, proins.ed, proins.attachpos)
+                        newproins = ProjectedInstance(proins.tid, poststind, proins.ed, proins.attachindex)
                         newprodb.append(newproins)
+
         frequentpattern(trees, pattern, newprodb)
 
 
@@ -141,6 +153,9 @@ def prefixtreeespan(trees):
         # constrcut <b -1> projected database
         prodb = prodbfromdb(trees, label)
         #  grow pattern's length by growth element
+        # if label == 'A':
+        #     for ii in prodb:
+        #         print(ii)
         frequentpattern(trees, len1subtree, prodb)
 
 
@@ -148,7 +163,11 @@ if __name__ == '__main__':
     getargs()
     time_start = datetime.datetime.now()
     trees = readtrees()
+    # for tree in trees:
+    #     print(tree.pre_order_string)
+    #     print(tree.partner)
     # print(len(trees))
+
     # global min_sup
     # min_sup = math.ceil(min_sup * len(trees))
     prefixtreeespan(trees)
