@@ -10,7 +10,7 @@ def getargs():
     global inputfile
     inputfile = os.path.join('testdatas', 'testin.data')
     global outputfile
-    outputfile = os.path.join('outputs', 'testout.data')
+    outputfile = os.path.join('outputs', 'testout.out')
     global min_sup
     min_sup = 2
     if len(sys.argv) == 0:
@@ -66,23 +66,16 @@ def frequentpattern(trees, subtree, prodb):
         for node in tree.nodes()[proins.st: proins.ed]:
             if node != '-1':
                 ge = GrowthElement(node, proins.attachindex)
-                if growthele.__contains__(ge):
-                    growthele[ge] += 1
-                else:
-                    growthele[ge] = 1
-    freges = []
-    for ge, sup in growthele.items():
-        global min_sup
-        if sup >= min_sup:
-            freges.append(ge)
+                if ge not in growthele:
+                    growthele[ge] = set([])
+                growthele[ge].add(tree.tid)
+    global min_sup
+    freges = [ge for ge, idset in growthele.items() if len(idset) >= min_sup]
     # for each growth-element
     for ge in freges:
         # extend subtree with ge and write it
         pattern = SubtreePattern(subtree, ge)
-        with open(outputfile, 'a', encoding='utf-8') as f:
-            for node in pattern.nodes():
-                f.write(node + ' ')
-            f.write('\n')
+        output(pattern.nodes())
         # find all occurrences of ge and construct (subtree + 1)'s projected database
         # one occurrence corresponding to one projected instance
         newprodb = []
@@ -126,36 +119,39 @@ def frequentpattern(trees, subtree, prodb):
         frequentpattern(trees, pattern, newprodb)
 
 
+def output(nodes):
+    global outputfile
+    with open(outputfile, 'a', encoding='utf-8') as f:
+        s = ' '.join(nodes)
+        f.write(s + ' \n')
+
+
 def prefixtreeespan(trees):
     # find all frequent label b: length-1 pattern
+    # frequency: hwo many trees this label occurs in
     labels = {}
-    frequent_labels = []
     for tree in trees:
         for node in tree.nodes():
             if node != '-1':
-                if labels.__contains__(node):
-                    labels[node] += 1
-                else:
-                    labels[node] = 1
-    for key, value in labels.items():
-        global min_sup
-        if value >= min_sup:
-            frequent_labels.append(key)
-
+                if node not in labels:
+                    labels[node] = set([])
+                labels[node].add(tree.tid)
+    # for label, idset in labels.items():
+    #     print(label, len(idset))
+    global min_sup
+    frequent_labels = [label for label, idset in labels.items() if len(idset) >= min_sup]
     for label in frequent_labels:
         nodes = [label, '-1']
         len1subtree = SubtreePattern(None, nodes)
         # output pattern tree <b -1>
-        with open(outputfile, 'a', encoding='utf-8') as f:
-            for node in len1subtree.nodes():
-                f.write(node + ' ')
-            f.write('\n')
+        output(len1subtree.nodes())
         # constrcut <b -1> projected database
         prodb = prodbfromdb(trees, label)
-        #  grow pattern's length by growth element
         # if label == 'A':
         #     for ii in prodb:
         #         print(ii)
+
+        #  grow pattern's length by growth element
         frequentpattern(trees, len1subtree, prodb)
 
 
