@@ -28,7 +28,6 @@ def getargs():
             outputfile = arg
         elif opt == '-s':
             min_sup = int(arg)
-            # min_sup = float(arg) / 100  # 0.3%
     if os.path.exists(outputfile):
         os.remove(outputfile)
     # print(inputfile, outputfile, min_sup)
@@ -163,9 +162,6 @@ if __name__ == '__main__':
     #     print(tree.pre_order_string)
     #     print(tree.partner)
     # print(len(trees))
-
-    # global min_sup
-    # min_sup = math.ceil(min_sup * len(trees))
     prefixtreeespan(trees)
     time_end = datetime.datetime.now()
     with open(outputfile, 'a', encoding='utf-8') as f:
